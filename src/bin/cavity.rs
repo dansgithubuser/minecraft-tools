@@ -3,7 +3,11 @@
 use minecraft_tools::{BlockResult, DimCache};
 
 use std::cmp::{max, min};
-use std::collections::{HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
+
+const CODE_AIR: u8 = 0;
+const CODE_TORCH: u8 = 1;
+const CODE_OTHER: u8 = 255;
 
 fn passable(block: &BlockResult) -> bool {
     let short_name = block.short_name();
@@ -11,6 +15,15 @@ fn passable(block: &BlockResult) -> bool {
         || short_name.contains("torch")
         || short_name.contains("door")
         || short_name == "ladder"
+}
+
+fn code(block: &BlockResult) -> u8 {
+    match block.short_name() {
+        "air" => CODE_AIR,
+        "torch" => CODE_TORCH,
+        "wall_torch" => CODE_TORCH,
+        _ => CODE_OTHER,
+    }
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -33,15 +46,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     // process queue, accumulate cave blocks, and keep track of cave extent
-    let mut cave = HashSet::<(isize, isize, isize)>::new();
+    let mut cave = HashMap::<(isize, isize, isize), u8>::new();
     let mut x_i = x_c;
     let mut x_f = x_c;
     let mut z_i = z_c;
     let mut z_f = z_c;
     let mut progress = 0;
     while !queue.is_empty() {
-        let (x, y, z) = queue.pop_front().unwrap();
-        for dx in -1..2 {
+        let (x, y, z) = queue.pop_front().unwrap(); for dx in -1..2 {
             for dy in -1..2 {
                 for dz in -1..2 {
                     let x_n = x + dx;
@@ -50,12 +62,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     if y_n > 62 {
                         continue;
                     }
-                    if cave.contains(&(x_n, y_n, z_n)) {
+                    if cave.contains_key(&(x_n, y_n, z_n)) {
                         continue;
                     }
-                    if passable(&dim.block(x_n, y_n, z_n)) {
+                    let block = dim.block(x_n, y_n, z_n);
+                    if passable(&block) {
                         queue.push_back((x_n, y_n, z_n));
-                        cave.insert((x_n, y_n, z_n));
+                        cave.insert((x_n, y_n, z_n), code(&block));
                         x_i = min(x_i, x_n);
                         x_f = max(x_f, x_n);
                         z_i = min(z_i, z_n);
@@ -75,12 +88,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         (z_f - z_i + 1) as u32,
         image::Rgba::<u8>([0, 0, 0, 255]),
     );
-    for (x, y, z) in cave {
-        let w = 128 + y as u8 * 2;
+    for ((x, y, z), code) in cave {
+        let w = 64 + y as u8 * 2;
+        let mut r = w;
+        let mut g = w;
+        let b = w;
+        if code == CODE_TORCH {
+            r += 64;
+            g += 64;
+        }
         img.put_pixel(
             (x - x_i) as u32,
             (z - z_i) as u32,
-            image::Rgba::<u8>([w, w, w, 255]),
+            image::Rgba::<u8>([r, g, b, 255]),
         );
     }
     img.save("cavity.png").unwrap();
