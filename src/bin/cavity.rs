@@ -3,27 +3,34 @@
 use minecraft_tools::{BlockResult, DimCache};
 
 use std::cmp::{max, min};
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 const CODE_AIR: u8 = 0;
 const CODE_TORCH: u8 = 1;
+const CODE_BANNER: u8 = 2;
 const CODE_OTHER: u8 = 255;
 
 fn passable(block: &BlockResult) -> bool {
     let short_name = block.short_name();
     short_name == "air"
         || short_name.contains("torch")
-        || short_name.contains("door")
         || short_name == "ladder"
+        || short_name.contains("door")
+        || short_name.contains("banner")
 }
 
 fn code(block: &BlockResult) -> u8 {
-    match block.short_name() {
-        "air" => CODE_AIR,
-        "torch" => CODE_TORCH,
-        "wall_torch" => CODE_TORCH,
-        _ => CODE_OTHER,
+    let short_name = block.short_name();
+    if short_name == "air" {
+        return CODE_AIR;
     }
+    if short_name.contains("torch") {
+        return CODE_TORCH;
+    }
+    if short_name.contains("banner") {
+        return CODE_BANNER;
+    }
+    CODE_OTHER
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -88,20 +95,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         (z_f - z_i + 1) as u32,
         image::Rgba::<u8>([0, 0, 0, 255]),
     );
+    let mut keep = HashSet::<(u32, u32)>::new();
     for ((x, y, z), code) in cave {
+        // skip if kept
+        let x_im = (x - x_i) as u32;
+        let z_im = (z - z_i) as u32;
+        if keep.contains(&(x_im, z_im)) {
+            continue;
+        }
+        // calculate color and put pixel
         let w = 64 + y as u8 * 2;
         let mut r = w;
         let mut g = w;
-        let b = w;
+        let mut b = w;
         if code == CODE_TORCH {
             r += 64;
             g += 64;
         }
-        img.put_pixel(
-            (x - x_i) as u32,
-            (z - z_i) as u32,
-            image::Rgba::<u8>([r, g, b, 255]),
-        );
+        if code == CODE_BANNER {
+            r = 255;
+            g = 0;
+            b = 255;
+        }
+        img.put_pixel(x_im, z_im, image::Rgba::<u8>([r, g, b, 255]));
+        // keep pixel
+        if code == CODE_BANNER {
+            keep.insert((x_im, z_im));
+        }
     }
     img.save("cavity.png").unwrap();
     Ok(())
