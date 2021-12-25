@@ -1,4 +1,4 @@
-use fastanvil::{Block, CCoord, Chunk, JavaChunk, RCoord, Region, RegionFileLoader, RegionLoader};
+use fastanvil::{CCoord, Chunk, JavaChunk, RCoord, Region, RegionFileLoader, RegionLoader};
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -7,7 +7,18 @@ pub enum BlockResult<'a> {
     NoRegion,
     NoChunk,
     NoBlock,
-    Block(&'a Block),
+    Block(&'a fastanvil::Block),
+}
+
+impl BlockResult<'_> {
+    pub fn short_name(&self) -> &str {
+        match self {
+            BlockResult::NoRegion => "no-region",
+            BlockResult::NoChunk => "no-chunk",
+            BlockResult::NoBlock => "no-block",
+            BlockResult::Block(block) => &block.name()[10..],
+        }
+    }
 }
 
 pub struct DimCache {
