@@ -1,9 +1,17 @@
 // Find and plot cave connectivity from a given location.
 
-use minecraft_tools::DimCache;
+use minecraft_tools::{BlockResult, DimCache};
 
 use std::cmp::{max, min};
 use std::collections::{HashSet, VecDeque};
+
+fn passable(block: &BlockResult) -> bool {
+    let short_name = block.short_name();
+    short_name == "air"
+        || short_name.contains("torch")
+        || short_name.contains("door")
+        || short_name == "ladder"
+}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = clap::App::new("Minecraft Cave Connectivity Plotter")
@@ -17,10 +25,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut dim = DimCache::new(matches.value_of("region folder").unwrap().into());
     let x_c = matches.value_of("x").unwrap().parse::<isize>()?;
     let z_c = matches.value_of("z").unwrap().parse::<isize>()?;
-    // check column of blocks below sea level at specified location, queue air blocks
+    // check column of blocks below sea level at specified location, queue passable blocks
     let mut queue = VecDeque::<(isize, isize, isize)>::new();
     for y in 0..62 {
-        if dim.block(x_c, y, z_c).short_name() == "air" {
+        if passable(&dim.block(x_c, y, z_c)) {
             queue.push_back((x_c, y, z_c));
         }
     }
@@ -45,7 +53,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     if cave.contains(&(x_n, y_n, z_n)) {
                         continue;
                     }
-                    if dim.block(x_n, y_n, z_n).short_name() == "air" {
+                    if passable(&dim.block(x_n, y_n, z_n)) {
                         queue.push_back((x_n, y_n, z_n));
                         cave.insert((x_n, y_n, z_n));
                         x_i = min(x_i, x_n);
