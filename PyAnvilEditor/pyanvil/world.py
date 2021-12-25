@@ -198,22 +198,16 @@ class Chunk:
 
         return new_nbt
 
-    def _read_width_from_loc(long_list, width, possition):
-        offset = possition * width
-        # if this is split across two nums
-        if (offset % 64) + width > 64:
-            # Find the lengths on each side of the split
-            side1len = 64 - ((offset) % 64)
-            side2len = ((offset + width) % 64)
-            # Select the sections we want from each
-            side1 = Chunk._read_bits(long_list[int(offset/64)], side1len, offset % 64)
-            side2 = Chunk._read_bits(long_list[int((offset + width)/64)], side2len, 0)
-            # Join them
-            comp = (side2 << side1len) + side1
-            return comp
-        else:
-            comp = Chunk._read_bits(long_list[int(offset/64)], width, offset % 64)
-            return comp
+    def _read_width_from_loc(long_list, width, position):
+        #max amount of blockstates that fit in each long
+        states_per_long = 64 // width
+
+        #the long in which this blockstate is stored
+        long_index = position // states_per_long
+
+        #at which bit in the long this state is located
+        position_in_long = (position % states_per_long)*width
+        return Chunk._read_bits(long_list[long_index], width, position_in_long)
 
     def _read_bits(num, width, start):
         # create a mask of size 'width' of 1 bits
