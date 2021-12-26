@@ -17,6 +17,8 @@ fn passable(block: &BlockResult) -> bool {
         || short_name == "ladder"
         || short_name.contains("door")
         || short_name.contains("banner")
+        || short_name.contains("fence")
+        || short_name.contains("rail")
 }
 
 fn code(block: &BlockResult) -> u8 {
