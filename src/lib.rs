@@ -19,6 +19,13 @@ impl BlockResult<'_> {
             BlockResult::Block(block) => &block.name()[10..],
         }
     }
+
+    pub fn has_name(&self, item_id: &str) -> bool {
+        match self {
+            BlockResult::Block(block) => block.name() == item_id,
+            _ => false,
+        }
+    }
 }
 
 pub struct DimCache {
