@@ -25,6 +25,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("rendering x={}, z={}..{}", x, z_i, z_f);
         for z in z_i..z_f {
             let mut r = 0;
+            let mut g = 0;
             let mut b = 0;
             match dim.block(x, 62, z) {
                 BlockResult::NoRegion => (),
@@ -32,14 +33,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 BlockResult::NoBlock => r = 255,
                 BlockResult::Block(block) => {
                     if block.name() == "minecraft:water" {
+                        r = 128;
+                        g = 128;
                         b = 255;
+                    } else {
+                        g = 128;
                     }
                 }
             };
             img.put_pixel(
                 (x - x_i) as u32,
                 (z - z_i) as u32,
-                image::Rgba::<u8>([r, 0, b, 255]),
+                image::Rgba::<u8>([r, g, b, 255]),
             );
         }
     }
