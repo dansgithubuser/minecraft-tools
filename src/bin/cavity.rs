@@ -2,6 +2,8 @@
 
 use minecraft_tools::{BlockResult, DimCache};
 
+use clap::Parser;
+
 use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet, VecDeque};
 
@@ -35,18 +37,18 @@ fn code(block: &BlockResult) -> u8 {
     CODE_OTHER
 }
 
+#[derive(Parser)]
+struct Args {
+    region_folder: String,
+    x: isize,
+    z: isize,
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let matches = clap::App::new("Minecraft Cave Connectivity Plotter")
-        .setting(clap::AppSettings::AllowLeadingHyphen)
-        .args_from_usage(
-            "<region folder>
-            <x>
-            <z>",
-        )
-        .get_matches();
-    let mut dim = DimCache::new(matches.value_of("region folder").unwrap().into());
-    let x_c = matches.value_of("x").unwrap().parse::<isize>()?;
-    let z_c = matches.value_of("z").unwrap().parse::<isize>()?;
+    let args = Args::parse();
+    let mut dim = DimCache::new(args.region_folder.into());
+    let x_c = args.x;
+    let z_c = args.z;
     // check column of blocks below sea level at specified location, queue passable blocks
     let mut queue = VecDeque::<(isize, isize, isize)>::new();
     for y in 0..62 {

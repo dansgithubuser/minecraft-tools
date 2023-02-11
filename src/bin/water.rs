@@ -2,20 +2,22 @@
 
 use minecraft_tools::{BlockResult, DimCache};
 
+use clap::Parser;
+
+#[derive(Parser)]
+struct Args {
+    region_folder: String,
+    x: isize,
+    z: isize,
+    size: usize,
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let matches = clap::App::new("Minecraft Water Plotter")
-        .setting(clap::AppSettings::AllowLeadingHyphen)
-        .args_from_usage(
-            "<region folder>
-            <x>
-            <z>
-            <size>",
-        )
-        .get_matches();
-    let mut dim = DimCache::new(matches.value_of("region folder").unwrap().into());
-    let x_c = matches.value_of("x").unwrap().parse::<isize>()?;
-    let z_c = matches.value_of("z").unwrap().parse::<isize>()?;
-    let size = matches.value_of("size").unwrap().parse::<usize>()? as isize;
+    let args = Args::parse();
+    let mut dim = DimCache::new(args.region_folder.into());
+    let x_c = args.x;
+    let z_c = args.z;
+    let size = args.size as isize;
     let x_i = x_c - size / 2;
     let x_f = x_i + size;
     let z_i = z_c - size / 2;

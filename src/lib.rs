@@ -1,6 +1,8 @@
-use fastanvil::{CCoord, Chunk, JavaChunk, RCoord, Region, RegionFileLoader, RegionLoader};
+use fastanvil::{Chunk, CurrentJavaChunk, RCoord, Region, RegionFileLoader, RegionLoader};
 
 use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::fs::File;
 use std::path::PathBuf;
 
 pub enum BlockResult<'a> {
@@ -29,17 +31,17 @@ impl BlockResult<'_> {
 }
 
 pub struct DimCache {
-    loader: RegionFileLoader<JavaChunk>,
-    regions: HashMap<(isize, isize), Option<Box<dyn Region<JavaChunk>>>>,
-    chunks: HashMap<(isize, isize), Option<JavaChunk>>,
+    loader: RegionFileLoader,
+    regions: HashMap<(isize, isize), Option<Region<File>>>,
+    chunks: HashMap<(isize, isize), Option<CurrentJavaChunk>>,
 }
 
 impl DimCache {
     pub fn new(region_folder: PathBuf) -> Self {
         Self {
-            loader: RegionFileLoader::<JavaChunk>::new(region_folder),
-            regions: HashMap::<(isize, isize), Option<Box<dyn Region<JavaChunk>>>>::new(),
-            chunks: HashMap::<(isize, isize), Option<JavaChunk>>::new(),
+            loader: RegionFileLoader::new(region_folder),
+            regions: HashMap::<(isize, isize), Option<Region<File>>>::new(),
+            chunks: HashMap::<(isize, isize), Option<CurrentJavaChunk>>::new(),
         }
     }
 
@@ -55,15 +57,18 @@ impl DimCache {
                     self.loader.region(RCoord(region_x), RCoord(region_z)),
                 );
             }
-            let region = match &self.regions[&(region_x, region_z)] {
+            let region = match self.regions.get_mut(&(region_x, region_z)).unwrap() {
                 Some(v) => v,
                 None => return BlockResult::NoRegion,
             };
-            let chunk_rel_x = chunk_x.rem_euclid(32);
-            let chunk_rel_z = chunk_z.rem_euclid(32);
+            let chunk_rel_x = usize::try_from(chunk_x.rem_euclid(32)).unwrap();
+            let chunk_rel_z = usize::try_from(chunk_z.rem_euclid(32)).unwrap();
             self.chunks.insert(
                 (chunk_x, chunk_z),
-                region.chunk(CCoord(chunk_rel_x), CCoord(chunk_rel_z)),
+                region
+                    .read_chunk(chunk_rel_x, chunk_rel_z)
+                    .unwrap()
+                    .map(|data| fastnbt::from_bytes(&data).unwrap()),
             );
         }
         let chunk = match &self.chunks[&(chunk_x, chunk_z)] {
