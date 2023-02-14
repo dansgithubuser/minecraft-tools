@@ -1,4 +1,4 @@
-use fastanvil::{Chunk, CurrentJavaChunk, RCoord, Region, RegionFileLoader, RegionLoader};
+use fastanvil::{Chunk, JavaChunk, RCoord, Region, RegionFileLoader, RegionLoader};
 
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -33,7 +33,7 @@ impl BlockResult<'_> {
 pub struct DimCache {
     loader: RegionFileLoader,
     regions: HashMap<(isize, isize), Option<Region<File>>>,
-    chunks: HashMap<(isize, isize), Option<CurrentJavaChunk>>,
+    chunks: HashMap<(isize, isize), Option<JavaChunk>>,
 }
 
 impl DimCache {
@@ -41,7 +41,7 @@ impl DimCache {
         Self {
             loader: RegionFileLoader::new(region_folder),
             regions: HashMap::<(isize, isize), Option<Region<File>>>::new(),
-            chunks: HashMap::<(isize, isize), Option<CurrentJavaChunk>>::new(),
+            chunks: HashMap::<(isize, isize), Option<JavaChunk>>::new(),
         }
     }
 
@@ -68,7 +68,7 @@ impl DimCache {
                 region
                     .read_chunk(chunk_rel_x, chunk_rel_z)
                     .unwrap()
-                    .map(|data| fastnbt::from_bytes(&data).unwrap()),
+                    .map(|data| JavaChunk::from_bytes(&data).unwrap()),
             );
         }
         let chunk = match &self.chunks[&(chunk_x, chunk_z)] {
