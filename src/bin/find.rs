@@ -12,6 +12,10 @@ struct Args {
     name: String,
     #[arg(default_value_t = 256)]
     r_max: usize,
+    #[arg(default_value_t = -64)]
+    y_min: isize,
+    #[arg(default_value_t = 256)]
+    y_max: isize,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -25,7 +29,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             for _ in 0..(2 * r - 1) {
                 x += dx;
                 z += dz;
-                for y in -64..256 {
+                for y in args.y_min..args.y_max {
                     if dim.block(x, y, z).has_name(&args.name) {
                         println!("found at ({}, {}, {})", x, y, z);
                         return Ok(());
