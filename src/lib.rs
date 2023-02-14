@@ -65,10 +65,18 @@ impl DimCache {
             let chunk_rel_z = usize::try_from(chunk_z.rem_euclid(32)).unwrap();
             self.chunks.insert(
                 (chunk_x, chunk_z),
-                region
+                match region
                     .read_chunk(chunk_rel_x, chunk_rel_z)
-                    .unwrap()
-                    .map(|data| JavaChunk::from_bytes(&data).unwrap()),
+                    .unwrap() {
+                        Some(data) => match JavaChunk::from_bytes(&data) {
+                            Ok(chunk) => Some(chunk),
+                            Err(e) => {
+                                eprintln!("Error decoding chunk: {}", e);
+                                None
+                            }
+                        }
+                        None => None,
+                    }
             );
         }
         let chunk = match &self.chunks[&(chunk_x, chunk_z)] {
