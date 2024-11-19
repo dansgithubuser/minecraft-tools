@@ -33,7 +33,7 @@ impl BlockResult<'_> {
 pub struct DimCache {
     loader: RegionFileLoader,
     regions: HashMap<(isize, isize), Option<Region<File>>>,
-    chunks: HashMap<(isize, isize), Option<JavaChunk>>,
+    pub chunks: HashMap<(isize, isize), Option<JavaChunk>>,
 }
 
 impl DimCache {
